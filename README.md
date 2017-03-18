@@ -18,9 +18,9 @@
 
 ## developWorkers JP というネーミング
 
-IBM社の develloperWorks JP という有名な技術者向けサイトのもじりです。私は developer と名乗れる程の人間ではなく、develop worker ぐらいかなぁ、と。
+IBM社の developerWorks JP という有名な技術者向けサイトのもじりです。私は developer と名乗れる程の人間ではなく、develop worker ぐらいかなぁ、と。
 
-develloperWorks とか他のガイド記事を読んでいて、個人的に思ったのは
+developerWorks とか他のガイド記事を読んでいて、個人的に思ったのは
 
 * すごく簡単に書いてある紹介記事 (ワンクリックで仮想環境が！)
 * すごく高尚な記事 (アーキテクチャがどうの、PaaSがどうの)
