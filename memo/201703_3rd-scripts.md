@@ -382,7 +382,7 @@ go や ruby はともかく、xpages, liberty, java, swift なんて必要なの
 
 ## 最後に initial_startup.rb
 
-今日の締めとして、起動メッセージの最後に出る app/vendor/initial_startup.rb を眺めておきましょう。
+今日の締めとして、起動メッセージの最後に出る app/vendor/initial_startup.rb を眺めておきましょう。app/.app-management/scripts/start はここから呼ばれた(execされた)んですね、なるほどー。
 
 ```ruby
 #!/usr/bin/env ruby

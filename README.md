@@ -17,6 +17,13 @@
 | 2017年3月 | [仮想マシンについて](memo/201703_2nd-study.md) | 仮想マシンの中を探ってみる |
 | 2017年3月 | [初心に戻ってpushする](memo/201703_3rd-scripts.md) | (やっと)真面目に手順どおり進めてみた |
 
+## Tips
+
+| 公開     | タイトル    | 概要  |
+|:-----------|:-----------|:-------------|
+| 2017年3月 | [Kindleで英語記事を読む](tips/201703_kindle.md) | developerWorks英語サイトの記事を楽に読む |
+
+
 ## developWorkers JP というネーミング
 
 IBM社の developerWorks JP という有名な技術者向けサイトのもじりです。私は developer と名乗れる程の人間ではなく、develop worker ぐらいかなぁ、と。
