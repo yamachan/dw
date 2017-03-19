@@ -1,6 +1,6 @@
 [トップページに戻る](../README.md) | [前回: 仮想マシンについて](201703_2nd-study.md)
 
-# TBD
+# 初心に戻ってpushする
 
 ## 初心に戻る
 
@@ -32,7 +32,7 @@ applications:
 
 確かにメモリ容量が 256MB に設定されています。
 
-random-route は「アプリケーションにランダムな経路を割り当てる」って説明がありますが、これは xxx.myblluemix.net というアクセス用の URL の xxx を自動で決めてくれる、のでしょうかね。
+random-route は「アプリケーションにランダムな経路を割り当てる」って説明がありますが、これは xxx.myblluemix.net というアクセス用の URL の xxx を自動で決めてくれる、のでしょうかね？
 
 ## アプリ起動の様子
 
@@ -200,7 +200,7 @@ if [[ " ${enabled[*]} " == *" inspector "* ]]; then
 fi
 ```
 
-なんか面倒なことしてんなー、と。でも Node.js 環境なので、Web などへの応答は handlers が担っているんですよね。なので起動時にハンドラーを指定できる仕組みが必要なのかな、それを汎用的にした仕組みなのかな、と理解してます。
+なんか面倒なことしてんなー、と。でも Node.js 環境なので、Web などへの応答はハンドラー(handlers)が担っているんですよね。なので起動時にそれを指定できる仕組みが必要なのかな、それを汎用的にした仕組みなのかな、と理解してます。
 
 また hc が指定されると利用されると node の代わりに node-hc が実行されますが、これが利用されると「IBM SDKに含まれたHealth Centerエージェントが起動し、統計情報をMQTTブローカーに送る」と [このページ](https://www.ibm.com/developerworks/community/blogs/sxa/entry/node_monitoring_with_ibm_healthcenter) に書いてありました。
 
@@ -246,9 +246,11 @@ npm start
 cf push "Node.js Test"
 ```
 
-いろいろ表示が出ましたが、問題なく更新された模様。指定したからなのか、アプリ名はそのままでした。でもインスタンスのメモリ量は256MBに戻っちゃいましたね。あと、使用ディスク量が30MBほど増えたかな？
+いろいろ表示が出ましたが、問題なく更新された模様。
 
 ![Web 画面](i/201703_3rd-scripts_05.png)
+
+指定したからなのか、アプリ名はそのままでした。でもインスタンスのメモリ量は256MBに戻っちゃいましたね。あと、使用ディスク量が30MBほど増えたかな？
 
 ![Web 画面](i/201703_3rd-scripts_06.png)
 
@@ -374,8 +376,133 @@ buildpack: SDK for Node.js(TM) (ibm-node.js-4.7.2, buildpack-v3.10-20170119-1146
 #0   running   2017-03-19 09:30:41 PM   0.0%   61.5M of 256M   84.4M of 1G
 ```
 
-ログを眺めてると、Droplet を作る様子がなかなか面白いですね。
+ログを眺めてると、Droplet を作る様子がなかなか面白いですね。サイズは19.5MBだってさ。
 
 go や ruby はともかく、xpages, liberty, java, swift なんて必要なのかなぁ？なんかまだ無駄が多いビルドパックな気がするんですが… 差分ファイルシステムだから、それほど気にしなくても良いのかもしれないけれども。
 
-## TBD
+## 最後に initial_startup.rb
+
+今日の締めとして、起動メッセージの最後に出る app/vendor/initial_startup.rb を眺めておきましょう。
+
+```ruby
+#!/usr/bin/env ruby
+# IBM SDK for Node.js Buildpack
+# Copyright 2014 the original author or authors. (略)
+
+# points to /home/vcap/app
+app_dir = File.expand_path('..', File.dirname(__FILE__))
+
+app_mgmt_dir = File.join(app_dir, '.app-management')
+
+$LOAD_PATH.unshift app_mgmt_dir
+
+require 'json'
+require 'utils/enabled_handlers'
+require 'utils/handlers'
+require 'utils/simple_logger'
+
+def start_runtime(app_dir)
+  exec(".app-management/scripts/start #{ENV['PORT']}", chdir: app_dir)
+end
+
+def start_proxy(app_dir)
+  exec('.app-management/bin/proxyAgent', chdir: app_dir)
+end
+
+def get_environment(app_mgmt_dir, app_dir)
+  env = {}
+  env['BOOT_SCRIPT'] = ENV['BOOT_SCRIPT']
+  env['BLUEMIX_DEV_CONSOLE_HIDE'] = '["stop"]'
+  env['BLUEMIX_DEV_CONSOLE_START_TIMEOUT'] = '500'
+  if system "bash -c \"source #{app_mgmt_dir}/utils/node_utils.sh && inspector_builtin #{app_dir}/vendor/node\""
+    env['BLUEMIX_DEV_CONSOLE_TOOLS'] = '[ {"name":"shell", "label":"Shell"} ]'
+  else
+    env['BLUEMIX_DEV_CONSOLE_TOOLS'] = '[ {"name":"shell", "label":"Shell"}, {"name": "inspector", "label": "Debugger"} ]'
+  end
+  env
+end
+
+def run(app_dir, env, handlers, background)
+  if handlers.length != 0
+    command = handlers.map { | handler | handler.start_script }.join(' ; ')
+    command = "( #{command} ) &" if background
+    system(env, "#{command}", chdir: app_dir)
+  end
+end
+
+def run_handlers(app_mgmt_dir, app_dir, handlers, valid_handlers, invalid_handlers)
+  Utils::SimpleLogger.warning("Ignoring unrecognized app management utilities: #{invalid_handlers.join(', ')}") unless invalid_handlers.empty?
+  Utils::SimpleLogger.info("Activating app management utilities: #{valid_handlers.join(', ')}")
+
+  # get environment for handlers
+  env = get_environment(app_mgmt_dir, app_dir)
+
+  # sort handlers for sync and async execution
+  sync_handlers, async_handlers = handlers.executions(valid_handlers)
+
+  # execute sync handlers
+  run(app_dir, env, sync_handlers, false)
+
+  # execute async handlers
+  run(app_dir, env, async_handlers, true)
+end
+
+def write_json(file, key, value)
+  hash = JSON.parse(File.read(file))
+  hash[key] = value
+  File.open(file,"w") do |f|
+    f.write(hash.to_json)
+  end
+end
+
+handler_list = Utils.get_enabled_handlers
+
+if handler_list.nil? || handler_list.empty?
+  # No handlers are specified. Start the runtime normally.
+  start_runtime(app_dir)
+else
+  handlers_dir = File.join(app_mgmt_dir, 'handlers')
+
+  handlers = Utils::Handlers.new(handlers_dir)
+
+  # validate headers
+  valid_handlers, invalid_handlers = handlers.validate(handler_list)
+
+  # check if proxy agent is required
+  proxy_required = handlers.proxy_required?(valid_handlers)
+
+  if proxy_required
+    # check instance index
+    index = JSON.parse(ENV['VCAP_APPLICATION'])['instance_index']
+    if index != 0
+      # Start the runtime normally. Only allow dev mode on index 0
+      start_runtime(app_dir)
+    else
+      # Run handlers
+      run_handlers(app_mgmt_dir, app_dir, handlers, valid_handlers, invalid_handlers)
+
+      # Start proxy
+      write_json(File.join(app_mgmt_dir, 'app_mgmt_info.json'), 'proxy_enabled', 'true')
+      start_proxy(app_dir)
+    end
+  else
+    # Run handlers
+    run_handlers(app_mgmt_dir, app_dir, handlers, valid_handlers, invalid_handlers)
+
+    # Start runtime
+    start_runtime(app_dir)
+  end
+end
+```
+
+## 今日はここまで
+
+いろいろ見て回って、最後に初心に帰ったところで、この3日間の Bluemix お試しの旅は一応、一区切りです。実際にアプリを書いて、仮想サーバーを更新していくことはできそうです。
+
+変に遠回りしなければ、1時間もあれば push まで行けたかもしれないですね(苦笑)
+
+まあ、いいんです、こうやって苦労するのも楽しみのうちです。良い資料にも出会えましたし！
+
+しかし、使ってみたら思ってたよりも良いものでした。もう遊んで、もう少し慣れたら、仕事でも使ってみようと思っています。
+
+[トップページに戻る](../README.md) | [前回: 仮想マシンについて](201703_2nd-study.md)
