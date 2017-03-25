@@ -1,4 +1,4 @@
-[トップページに戻る](../README.md) | [前回: 初心に戻ってpushする](201703_3rd-scripts.md)
+[トップページに戻る](../README.md) | [前回: 初心に戻ってpushする](201703_3rd-scripts.md) | [次回: 最小の Node.js 環境を作ってみる](201703_5th-base.md)
 
 # Node.js 環境に慣れる
 
@@ -82,4 +82,4 @@ node に --harmony-async-await オプションが必要、かと思いました�
 
 Takehiko Amano さんに深く感謝しつつ、今日は早めに寝まーす。
 
-[トップページに戻る](../README.md) | [前回: 初心に戻ってpushする](201703_3rd-scripts.md)
+[トップページに戻る](../README.md) | [前回: 初心に戻ってpushする](201703_3rd-scripts.md) | [次回: 最小の Node.js 環境を作ってみる](201703_5th-base.md)
